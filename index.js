@@ -151,7 +151,7 @@ function listenForNewCA() {
 
     // ping in every 5 second
     intervalId = setInterval(() => {
-      if (webSocketClient?.readyState === WebSocket.OPEN) {
+      if (webSocketClient?.readyState === 1) {
         webSocketClient.send(JSON.stringify({ type: "ping" }));
       }
     }, 5 * 1000);
@@ -172,7 +172,7 @@ function listenForNewCA() {
       if (receivedMessage) {
         const token = receivedMessage.message;
 
-        if (token) {
+        if (token !== "Forbidden") {
           const senderWalletAddress = receivedMessage.sender_wallet_address;
           const senderUsername = receivedMessage.sender_username;
           const senderPfp = receivedMessage.sender_pfp;
