@@ -67,7 +67,9 @@ function trackToken(
   alertFor = 2,
   price = "",
   userWalletAddress = "",
-  marketCap = ""
+  marketCap = "",
+  username = "",
+  profilePic = ""
 ) {
   console.log(`Tracking Token ${token}`);
   let count = 0;
@@ -103,10 +105,13 @@ function trackToken(
       if (currentPrice >= expectedPrice) {
         const tokenDetails = {
           token_symbol: `$${symbol}`,
+          token_logo: data.pairs[0]?.info?.imageUrl ?? "",
           pumped: `${alertFor}X`,
           called: marketCap,
-          now: data.pairs[0].priceUsd,
+          now: data.pairs[0].marketCap,
           shared_by: userWalletAddress,
+          shared_by_username: username,
+          shared_by_profile_pic: profilePic,
         };
 
         const message = {
@@ -157,6 +162,8 @@ function listenForNewCA() {
 
         if (token) {
           const senderWalletAddress = receivedMessage.sender_wallet_address;
+          const senderUsername = receivedMessage.sender_username;
+          const senderPfp = receivedMessage.sender_pfp;
           const price = receivedMessage.token_info?.dex_screener?.price;
           const marketCap =
             receivedMessage.token_info?.dex_screener?.market_cap;
@@ -169,7 +176,15 @@ function listenForNewCA() {
           //   senderWalletAddress
           // );
           if (price !== "") {
-            trackToken(token, 2, price, senderWalletAddress, marketCap);
+            trackToken(
+              token,
+              2,
+              price,
+              senderWalletAddress,
+              marketCap,
+              senderUsername,
+              senderPfp
+            );
           }
         }
       }
@@ -192,7 +207,9 @@ async function init() {
       token.token_alert,
       token.token_price,
       token.user_wallet_address,
-      token.token_market_cap
+      token.token_market_cap,
+      token.user_username,
+      token.user_profile_pic
     )
   );
 }
