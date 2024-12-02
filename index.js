@@ -7,6 +7,7 @@ const ALPHA_ROOM_BASE_URL = process.env.ALPHA_ROOM_BASE_URL;
 const ALPHA_ROOM_WEB_SOCKET = process.env.ALPHA_ROOM_WEB_SOCKET;
 
 var webSocketClient;
+var intervalId;
 const DEGEN_BOT_USER_WALLET_ADDRESS = process.env.DEGEN_BOT_USER_WALLET_ADDRESS;
 
 async function updateTokenAlert(token, newAlert) {
@@ -147,10 +148,21 @@ function listenForNewCA() {
 
   webSocketClient.onopen = function () {
     console.log("WebSocket Client Connected");
+
+    // ping in every 5 second
+    intervalId = setInterval(() => {
+      if (webSocketClient?.readyState === WebSocket.OPEN) {
+        webSocketClient.send(JSON.stringify({ type: "ping" }));
+      }
+    }, 5 * 1000);
   };
 
   webSocketClient.onclose = function () {
     console.log("WebSocket Client Closed");
+    clearInterval(intervalId);
+
+    // try to reconnect after a delay
+    setTimeout(listenForNewCA, 5 * 1000);
   };
 
   webSocketClient.onmessage = async function (event) {
