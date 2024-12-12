@@ -1,13 +1,18 @@
 require("dotenv").config();
-const fetch = require("node-fetch");
-const W3CWebSocket = require("websocket").w3cwebsocket;
 
+const express = require("express");
+const fetch = require("node-fetch");
+
+const W3CWebSocket = require("websocket").w3cwebsocket;
+const app = express();
+
+const PORT = process.env.PORT || 3000;
 const DEX_SCREENER_BASE_URL = process.env.DEX_SCREENER_BASE_URL;
 const ALPHA_ROOM_BASE_URL = process.env.ALPHA_ROOM_BASE_URL;
 const ALPHA_ROOM_WEB_SOCKET = process.env.ALPHA_ROOM_WEB_SOCKET;
 
 var webSocketClient;
-var intervalId;
+// var intervalId;
 const DEGEN_BOT_USER_WALLET_ADDRESS = process.env.DEGEN_BOT_USER_WALLET_ADDRESS;
 
 async function updateTokenAlert(token, newAlert) {
@@ -27,41 +32,41 @@ async function updateTokenAlert(token, newAlert) {
   }
 }
 
-async function updateTrackToken(token, userWalletAddress) {
-  try {
-    const response = await fetch(DEX_SCREENER_BASE_URL + "/" + token);
-    const data = await response.json();
+// async function updateTrackToken(token, userWalletAddress) {
+//   try {
+//     const response = await fetch(DEX_SCREENER_BASE_URL + "/" + token);
+//     const data = await response.json();
 
-    if (data.pairs.length === 0) {
-      console.log(
-        `Update Track Token: Either CA ${token} is not correct or not present on DexScreener`
-      );
-      return ["", 2];
-    }
+//     if (data.pairs.length === 0) {
+//       console.log(
+//         `Update Track Token: Either CA ${token} is not correct or not present on DexScreener`
+//       );
+//       return ["", 2];
+//     }
 
-    const price = data.pairs[0].priceUsd;
-    const marketCap = data.pairs[0].marketCap;
-    const alert = 2;
+//     const price = data.pairs[0].priceUsd;
+//     const marketCap = data.pairs[0].marketCap;
+//     const alert = 2;
 
-    await fetch(ALPHA_ROOM_BASE_URL, {
-      method: "POST",
-      body: JSON.stringify({
-        method: "update_track_contracts",
-        tokenContract: token,
-        tokenPrice: price,
-        tokenMarketCap: marketCap,
-        tokenAlert: alert,
-        userWalletAddress: userWalletAddress,
-      }),
-    });
+//     await fetch(ALPHA_ROOM_BASE_URL, {
+//       method: "POST",
+//       body: JSON.stringify({
+//         method: "update_track_contracts",
+//         tokenContract: token,
+//         tokenPrice: price,
+//         tokenMarketCap: marketCap,
+//         tokenAlert: alert,
+//         userWalletAddress: userWalletAddress,
+//       }),
+//     });
 
-    console.log(`Update Track Token ${token} Successful`);
-    return [price, alert];
-  } catch (error) {
-    console.log(`Update Track Token ${token}, Error: `, error);
-    return ["", 2];
-  }
-}
+//     console.log(`Update Track Token ${token} Successful`);
+//     return [price, alert];
+//   } catch (error) {
+//     console.log(`Update Track Token ${token}, Error: `, error);
+//     return ["", 2];
+//   }
+// }
 
 function trackToken(
   token,
@@ -122,8 +127,8 @@ function trackToken(
         };
 
         console.log("message", message);
-
         webSocketClient.send(JSON.stringify(message));
+
         console.log(
           `BBBBOOOOOOOOOOMMMMMMMMMMM !! WE GOT A ${alertFor} HIT FOR TOKEN ${token} !!!`
         );
@@ -165,45 +170,45 @@ function listenForNewCA() {
     setTimeout(listenForNewCA, 5 * 1000);
   };
 
-  webSocketClient.onmessage = async function (event) {
-    try {
-      const receivedMessage = JSON.parse(event.data);
+  //   webSocketClient.onmessage = async function (event) {
+  //     try {
+  //       const receivedMessage = JSON.parse(event.data);
 
-      if (receivedMessage) {
-        const token = receivedMessage.message;
+  //       if (receivedMessage) {
+  //         const token = receivedMessage.message;
 
-        if (token !== "Forbidden") {
-          const senderWalletAddress = receivedMessage.sender_wallet_address;
-          const senderUsername = receivedMessage.sender_username;
-          const senderPfp = receivedMessage.sender_pfp;
-          const price = receivedMessage.token_info?.dex_screener?.price;
-          const marketCap =
-            receivedMessage.token_info?.dex_screener?.market_cap;
-          console.log(
-            `Received Token ${token} from WebSocket -- price ${price} -- marketCap ${marketCap}`
-          );
+  //         if (token !== "Forbidden") {
+  //           const senderWalletAddress = receivedMessage.sender_wallet_address;
+  //           const senderUsername = receivedMessage.sender_username;
+  //           const senderPfp = receivedMessage.sender_pfp;
+  //           const price = receivedMessage.token_info?.dex_screener?.price;
+  //           const marketCap =
+  //             receivedMessage.token_info?.dex_screener?.market_cap;
+  //           console.log(
+  //             `Received Token ${token} from WebSocket -- price ${price} -- marketCap ${marketCap}`
+  //           );
 
-          // const [price, alert] = await updateTrackToken(
-          //   token,
-          //   senderWalletAddress
-          // );
-          if (price !== "") {
-            trackToken(
-              token,
-              2,
-              price,
-              senderWalletAddress,
-              marketCap,
-              senderUsername,
-              senderPfp
-            );
-          }
-        }
-      }
-    } catch (e) {
-      console.log("websocket message error", error);
-    }
-  };
+  //           // const [price, alert] = await updateTrackToken(
+  //           //   token,
+  //           //   senderWalletAddress
+  //           // );
+  //           if (price !== "") {
+  //             trackToken(
+  //               token,
+  //               2,
+  //               price,
+  //               senderWalletAddress,
+  //               marketCap,
+  //               senderUsername,
+  //               senderPfp
+  //             );
+  //           }
+  //         }
+  //       }
+  //     } catch (e) {
+  //       console.log("websocket message error", error);
+  //     }
+  //   };
 }
 
 async function init() {
@@ -226,5 +231,44 @@ async function init() {
   );
 }
 
+app.use(express.json());
+app.get("/", (_, res) => {
+  res.send("Hello, Alert On Price Change!");
+});
+
+app.post("/track-token", (req, res) => {
+  try {
+    const body = req.body;
+    console.log("Track Token Request Body: ", body);
+
+    const token = body.message;
+    const senderWalletAddress = body.sender_wallet_address;
+    const senderUsername = body.sender_username;
+    const senderPfp = body.sender_pfp;
+    const price = body.token_info?.dex_screener?.price;
+    const marketCap = body.token_info?.dex_screener?.market_cap;
+
+    if (price) {
+      trackToken(
+        token,
+        2,
+        price,
+        senderWalletAddress,
+        marketCap,
+        senderUsername,
+        senderPfp
+      );
+    }
+  } catch (e) {
+    console.log("Track Token Message Error: ", e);
+  }
+
+  res.send("Ok");
+});
+
 listenForNewCA();
 init();
+
+app.listen(PORT, () => {
+  console.log(`Alert on price change listening on port: ${PORT}`);
+});
